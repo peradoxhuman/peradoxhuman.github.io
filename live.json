@@ -1,6 +1,6 @@
 {
   "urls": [
-    "https://example.com/path-to-your-first-playlist.m3u",
+    "https://raw.githubusercontent.com/tvbd/m3uplayer/refs/heads/main/m3u/xniptv.m3u",
     "https://example.com/another-iptv-playlist-source.m3u"
   ]
 }
