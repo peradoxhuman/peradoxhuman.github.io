@@ -2,17 +2,472 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube to MP3 Converter</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Akash Live - Glass IPTV</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --blur: blur(20px);
+            --text-dark: #1c1c1e;
+            --text-muted: #8e8e93;
+            --ios-blue: #007aff;
+            --ios-red: #ff3b30;
+            --ios-bg: #f2f2f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #a1c4fd, #c2e9fb, #e0c3fc, #fdfbfb);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            background-attachment: fixed;
+            color: var(--text-dark);
+            padding-bottom: 80px; 
+            min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--ios-blue), #5856d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-section {
+            position: sticky;
+            top: 65px; 
+            z-index: 99;
+            padding: 15px;
+        }
+
+        .video-container {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+            position: relative;
+            transform: translateZ(0);
+        }
+
+        video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            display: block;
+        }
+
+        /* Fullscreen Button */
+        .fs-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .fs-btn:hover { background: rgba(255, 255, 255, 0.4); }
+
+        .now-playing {
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .now-playing-info h3 { font-size: 16px; margin-bottom: 4px; }
+        .now-playing-info p { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--ios-red);
+            background: rgba(255, 59, 48, 0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--ios-red);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            padding: 5px 15px 15px;
+            position: relative;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .tab-btn.active { color: var(--ios-blue); }
+
+        .tab-indicator {
+            position: absolute;
+            height: 40px;
+            background: #fff;
+            border-radius: 20px;
+            z-index: 0;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .content-area { padding: 0 15px 15px 15px; }
+
+        .channel-card {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 18px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.2s ease;
+            opacity: 0;
+            animation: slideUp 0.4s ease forwards;
+            cursor: pointer;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .channel-card:active { transform: scale(0.96); background: rgba(255, 255, 255, 0.7); }
+
+        .channel-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--ios-blue);
+            flex-shrink: 0;
+            object-fit: contain;
+            padding: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .channel-info { flex: 1; overflow: hidden; }
+        .channel-info h4 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dark); }
+        .channel-info p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+        .fav-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: #d1d1d6;
+            padding: 10px;
+            transition: all 0.2s ease;
+        }
+        .fav-btn.active { color: var(--ios-red); animation: pop 0.3s ease; }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; color: var(--ios-blue); }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(0, 122, 255, 0.2); border-top-color: var(--ios-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .ad-footer {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 468px;
+            height: 60px;
+            max-width: 95vw;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>YouTube to MP3 Converter</h1>
-        <input type="text" id="videoUrl" placeholder="Enter YouTube Video URL" />
-        <button id="convertBtn">Convert to MP3</button>
-        <div id="result"></div>
+
+    <header class="glass">
+        <h2><i class="fa-solid fa-play-circle"></i> Akash Live</h2>
+    </header>
+
+    <div class="player-section">
+        <div class="video-container" id="player-wrapper">
+            <video id="video-player" controls playsinline autoplay></video>
+            <button class="fs-btn" onclick="toggleFullScreen()" title="Full Screen">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+        </div>
+        <div class="glass now-playing">
+            <div class="now-playing-info">
+                <h3 id="current-channel">Select a channel</h3>
+                <p id="current-program">Ready to play</p>
+            </div>
+            <div class="live-indicator" id="live-badge" style="display: none;">
+                <div class="live-dot"></div> Live
+            </div>
+        </div>
     </div>
-    <script src="script.js"></script>
+
+    <div class="tabs">
+        <div class="tab-indicator" id="tab-bg"></div>
+        <button class="tab-btn active" onclick="switchTab('live', this)">Live TV</button>
+        <button class="tab-btn" onclick="switchTab('epg', this)">Guide</button>
+        <button class="tab-btn" onclick="switchTab('fav', this)">Favorites</button>
+    </div>
+
+    <div class="content-area" id="content-list">
+        <div class="loader-container">
+            <div class="spinner"></div>
+            <p>Loading channels...</p>
+        </div>
+    </div>
+
+    <div class="glass ad-footer">
+        <div style="text-align:center; line-height: 1.2;">
+            Advertisement<br><span style="font-size:10px;">468 x 60</span>
+        </div>
+    </div>
+
+    <script>
+        const M3U_URL = "https://raw.githubusercontent.com/tvbd/m3uplayer/refs/heads/main/m3u/xniptv.m3u";
+        const video = document.getElementById('video-player');
+        const playerWrapper = document.getElementById('player-wrapper');
+        let hls = null;
+        let currentFilter = 'live';
+        let channels = [];
+
+        // --- Fullscreen Logic ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                if (playerWrapper.requestFullscreen) {
+                    playerWrapper.requestFullscreen();
+                } else if (playerWrapper.webkitRequestFullscreen) { /* Safari */
+                    playerWrapper.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+
+        // Tab indicator animation logic
+        function updateTabIndicator(activeBtn) {
+            const indicator = document.getElementById('tab-bg');
+            indicator.style.width = `${activeBtn.offsetWidth}px`;
+            indicator.style.left = `${activeBtn.offsetLeft}px`;
+        }
+
+        async function fetchPlaylist() {
+            try {
+                const response = await fetch(M3U_URL);
+                if (!response.ok) throw new Error("Network response was not ok");
+                const text = await response.text();
+                
+                const lines = text.split('\n');
+                let newChannels = [];
+                let currentChannel = {};
+
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (line.startsWith('#EXTINF:')) {
+                        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                        currentChannel.logoUrl = logoMatch ? logoMatch[1] : null;
+                        const nameParts = line.split(',');
+                        currentChannel.name = nameParts.length > 1 ? nameParts[nameParts.length - 1].trim() : "Unknown Channel";
+                        currentChannel.id = Math.random().toString(36).substr(2, 9);
+                        currentChannel.isFav = false;
+                    } else if (line.startsWith('http')) {
+                        currentChannel.url = line;
+                        newChannels.push({...currentChannel});
+                        currentChannel = {};
+                    }
+                });
+
+                channels = newChannels;
+                renderList();
+                if (channels.length > 0) playStream(channels[0].id);
+            } catch (error) {
+                document.getElementById('content-list').innerHTML = `<div style="text-align:center; color: var(--ios-red); padding: 30px;"><p>Failed to load playlist.</p></div>`;
+            }
+        }
+
+        function playStream(id) {
+            const channel = channels.find(c => c.id === id);
+            if (!channel) return;
+
+            document.getElementById('current-channel').innerText = channel.name;
+            document.getElementById('current-program').innerText = "Streaming via HLS";
+            document.getElementById('live-badge').style.display = 'flex';
+
+            if (Hls.isSupported() && channel.url.includes('.m3u8')) {
+                if (hls) hls.destroy();
+                hls = new Hls({ maxBufferLength: 30, enableWorker: true });
+                hls.loadSource(channel.url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(e => console.log("Autoplay blocked"));
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl') || channel.url.includes('.mp4')) {
+                video.src = channel.url;
+                video.play().catch(e => console.log("Autoplay blocked"));
+            }
+        }
+
+        function toggleFav(e, id) {
+            e.stopPropagation();
+            const channel = channels.find(c => c.id === id);
+            channel.isFav = !channel.isFav;
+            if (currentFilter === 'fav') renderList();
+            else {
+                const btn = e.currentTarget;
+                btn.classList.toggle('active');
+            }
+        }
+
+        function switchTab(tab, element) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            updateTabIndicator(element);
+            currentFilter = tab;
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('content-list');
+            container.innerHTML = '';
+            let list = (currentFilter === 'fav') ? channels.filter(c => c.isFav) : channels;
+            
+            if (currentFilter === 'epg') {
+                container.innerHTML = `<div style="text-align:center; padding: 40px 20px;"><p style="color:var(--text-muted);">TV Guide requires an XMLTV source.</p></div>`;
+                return;
+            }
+
+            if(list.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:30px;">No channels found.</p>';
+                return;
+            }
+
+            list.forEach((channel, index) => {
+                const logoHtml = channel.logoUrl 
+                    ? `<img src="${channel.logoUrl}" class="channel-logo" onerror="this.outerHTML='<div class=\\'channel-logo\\'><i class=\\'fa-solid fa-tv\\'></i></div>'">`
+                    : `<div class="channel-logo"><i class="fa-solid fa-tv"></i></div>`;
+                
+                const animDelay = (index * 0.05) > 1 ? 0 : (index * 0.05);
+                const html = `
+                    <div class="channel-card glass" style="animation-delay: ${animDelay}s" onclick="playStream('${channel.id}')">
+                        ${logoHtml}
+                        <div class="channel-info"><h4>${channel.name}</h4><p>Tap to play</p></div>
+                        <button class="fav-btn ${channel.isFav ? 'active' : ''}" onclick="toggleFav(event, '${channel.id}')"><i class="fa-solid fa-heart"></i></button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        window.onload = () => {
+            const activeTab = document.querySelector('.tab-btn.active');
+            updateTabIndicator(activeTab);
+            fetchPlaylist();
+        };
+
+        window.addEventListener('resize', () => {
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab) updateTabIndicator(activeTab);
+        });
+    </script>
 </body>
 </html>
