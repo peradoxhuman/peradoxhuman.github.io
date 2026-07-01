@@ -1,6 +1,6 @@
 {
   "urls": [
-    "https://example.com/path-to-your-first-playlist.m3u",
-    "https://example.com/another-iptv-playlist-source.m3u"
+    "https://raw.githubusercontent.com/srhady/axsports/refs/heads/main/playlist.m3u",
+    "https://lupael.github.io/IPTV/running.m3u"
   ]
 }
